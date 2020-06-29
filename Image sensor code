@@ -1,0 +1,60 @@
+#from picamera import PiCamers
+from PIL import Image
+import os
+import datetime
+import smtplib
+import time
+
+#camera = PiCamera()
+
+data = []
+file_path = "D:\Bhaskar\IBM Project"  #this will be the folder where the images are stored
+n = 2 #no. of plants
+
+def send(b):
+    s = smtplib.SMTP("smtp.gmail.com", 587)
+    s.starttls()
+    s.login("1m1bproj@gmail.com", "zxcvbnmqwertyuiop")
+    message = "Please Check plant number" + str(b)
+    s.sendmail("1m1bproj@gmail.com", "1m1bproj@gmail.com", message)
+    s.quit()
+    
+while True:
+    t = datetime.datetime.now()
+    if t.hour == 20 and t.minute == 21:
+        """camera.start_preview()
+        camera.exposure_mode = "night"  (Incase images need to be taken at night)  (basically go to https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
+        for i in range(0, n):
+            time.sleep(5)
+            camera.capture(file_path + "\\image%s.jpg" % i)  #we may have to create an 
+            time.sleep(time required for motor to reach and stop)
+        camera.stop_preview"""
+
+    
+        cur_data = []
+        count = 0
+        for file in os.listdir(file_path):
+            color = 0
+            im = Image.open(file_path +"\\" + file)
+            count += 1
+            for pixel in im.getdata():
+                if (pixel[0] in range(50, 100) and pixel[1] in range(50, 100) and pixel[2] in range(50, 100)):  # change the pixel ranges as per accepted green values
+                    color += 1
+            cur_data.append([count, color, datetime.date.today(), file_path + "\\" + file])
+        data.append(cur_data)
+
+        for i in range(0, len(cur_data)):
+            avg = sum(data[j][i][1] for j in range(0, len(data)))/len(data) # average of all the plants
+            if cur_data[i][1] < avg: 
+                print(cur_data[i][0], "is bad. Check")
+                b = cur_data[i][0]
+                send(b)
+            print(avg)
+
+        for i in cur_data:
+            os.remove(i[3])
+        time.sleep(60)
+
+#if picamera module is not installed, use command line of raspberry pi to install it by typing the command "sudo apt install python3-picamera"
+#to install pillow library use pip3. If pip3 is not installed type command "sudo apt install python3-pip" in the command line. Then use command "sudo pip3 install pillow" to install pillow library.
+#to setup the raspberry camera follow instructions on https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2        
